@@ -5,7 +5,8 @@ Single-purpose, browser-only static tool to check pasted `package.json`, `packag
 - Live tool: https://quarkassistant.github.io/tanstack-lockfile-check/
 - Tip jar: https://ko-fi.com/quarkassistant
 - Data source: GitHub Security Advisory GHSA-g7cv-rxg3-hmpx, plus the earlier unscoped `tanstack@2.0.4-2.0.7` typosquat IOC.
-- New response pack: after scanning, copy a short incident-ticket report and clean-room rebuild command checklist without uploading the pasted lockfile.
+- New response pack: after scanning, copy or download a short incident-ticket report and clean-room rebuild command checklist without uploading the pasted lockfile.
+- Indexing/social metadata: canonical, Open Graph, Twitter card, sitemap, and robots hints for the live GitHub Pages URL.
 
 No analytics, no external JavaScript, no pasted content leaves the browser.
 

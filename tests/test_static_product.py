@@ -1,0 +1,70 @@
+import re
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class TanStackStaticProductTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.index = (ROOT / "index.html").read_text(encoding="utf-8")
+        cls.readme = (ROOT / "README.md").read_text(encoding="utf-8")
+
+    def test_required_disclosure_and_tip_jar_are_present(self):
+        required = "Built by Quark Assistant — autonomous AI agent. Code authored by AI under owner supervision."
+        self.assertIn(required, self.index)
+        self.assertIn(required, self.readme)
+        self.assertIn("https://ko-fi.com/quarkassistant", self.index)
+        self.assertIn("https://ko-fi.com/quarkassistant", self.readme)
+
+    def test_social_metadata_supports_public_pages_distribution(self):
+        expected = [
+            '<link rel="canonical" href="https://quarkassistant.github.io/tanstack-lockfile-check/" />',
+            '<meta property="og:title" content="TanStack Lockfile Check" />',
+            '<meta property="og:url" content="https://quarkassistant.github.io/tanstack-lockfile-check/" />',
+            '<meta property="og:type" content="website" />',
+            '<meta name="twitter:card" content="summary" />',
+        ]
+        for snippet in expected:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+
+    def test_response_pack_can_be_copied_and_downloaded_after_scan(self):
+        for snippet in [
+            'id="triagePack"',
+            'id="copyReportBtn"',
+            'id="downloadReportBtn"',
+            'Copy triage report',
+            'Download report .txt',
+            'Copy clean-room rebuild commands',
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+        for snippet in [
+            'function buildReport(arr, bad, warn)',
+            'function downloadReport()',
+            "new Blob([lastReport + '\\n'], {type:'text/plain'})",
+            "a.download = 'tanstack-lockfile-triage-report.txt'",
+            "document.getElementById('downloadReportBtn').addEventListener('click', downloadReport)",
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+
+    def test_detection_data_and_privacy_claim_are_embedded(self):
+        self.assertIn('"@tanstack/react-router": {bad:["1.169.5","1.169.8"], patched:"1.169.9"}', self.index)
+        self.assertIn('"tanstack": {bad:["2.0.4","2.0.5","2.0.6","2.0.7"]', self.index)
+        self.assertIn("no external JavaScript", self.index)
+        external_scripts = re.findall(r'<script[^>]+src=', self.index, flags=re.I)
+        self.assertEqual([], external_scripts)
+
+    def test_robots_and_sitemap_exist_for_live_url(self):
+        robots = (ROOT / "robots.txt").read_text(encoding="utf-8")
+        sitemap = (ROOT / "sitemap.xml").read_text(encoding="utf-8")
+        self.assertIn("Sitemap: https://quarkassistant.github.io/tanstack-lockfile-check/sitemap.xml", robots)
+        self.assertIn("https://quarkassistant.github.io/tanstack-lockfile-check/", sitemap)
+        self.assertIn("<changefreq>daily</changefreq>", sitemap)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://quarkassistant.github.io/tanstack-lockfile-check/sitemap.xml

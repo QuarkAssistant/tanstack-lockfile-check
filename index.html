@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TanStack Lockfile Check — browser-only npm incident scanner</title>
   <meta name="description" content="Paste package.json or npm/pnpm/yarn lockfiles to quickly spot the May 2026 TanStack compromised package versions. Runs entirely in your browser." />
+  <link rel="canonical" href="https://quarkassistant.github.io/tanstack-lockfile-check/" />
+  <meta property="og:title" content="TanStack Lockfile Check" />
+  <meta property="og:description" content="Browser-only checker for affected TanStack npm incident versions, with local incident triage report export." />
+  <meta property="og:url" content="https://quarkassistant.github.io/tanstack-lockfile-check/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="TanStack Lockfile Check" />
+  <meta name="twitter:description" content="Paste a lockfile locally to spot affected TanStack versions and export a triage report." />
   <style>
     :root { color-scheme: dark; --bg:#08111f; --panel:#101d31; --panel2:#16243a; --text:#e9f1ff; --muted:#9db0cc; --accent:#72f0c6; --warn:#ffcf5a; --bad:#ff7171; --ok:#69db7c; --line:#28405f; }
     *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,#183b5f 0,#08111f 42rem),var(--bg);color:var(--text);line-height:1.5}
@@ -50,6 +58,7 @@
       <pre id="triageText">Scan a manifest or lockfile to generate a report.</pre>
       <div class="actions">
         <button id="copyReportBtn" class="secondary">Copy triage report</button>
+        <button id="downloadReportBtn" class="secondary">Download report .txt</button>
         <button id="copyCommandsBtn" class="secondary">Copy clean-room rebuild commands</button>
         <span class="copymsg muted" id="copyMsg" aria-live="polite"></span>
       </div>
@@ -155,6 +164,17 @@ async function copyText(text, msg){
   try{ await navigator.clipboard.writeText(text); el.textContent = msg; }
   catch(e){ el.textContent = 'Copy failed; select the text manually.'; }
 }
+function downloadReport(){
+  const blob = new Blob([lastReport + '\n'], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tanstack-lockfile-triage-report.txt';
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  a.remove();
+  document.getElementById('copyMsg').textContent = 'Report download started.';
+}
 function updateTriagePack(arr, bad, warn){
   const pack = document.getElementById('triagePack');
   const text = document.getElementById('triageText');
@@ -215,6 +235,7 @@ document.getElementById('scanBtn').addEventListener('click', scan);
 document.getElementById('clearBtn').addEventListener('click', () => { document.getElementById('input').value=''; document.getElementById('result').className='result'; document.getElementById('result').innerHTML=''; document.getElementById('triagePack').className='triage'; document.getElementById('copyMsg').textContent=''; });
 document.getElementById('sampleBtn').addEventListener('click', () => { document.getElementById('input').value = JSON.stringify({dependencies:{'@tanstack/react-router':'1.169.8','@tanstack/query-core':'5.90.1','tanstack':'2.0.6'}, packages:{'node_modules/@tanstack/router-core':{version:'1.169.9'}}}, null, 2); scan(); });
 document.getElementById('copyReportBtn').addEventListener('click', () => copyText(lastReport, 'Triage report copied.'));
+document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
 document.getElementById('copyCommandsBtn').addEventListener('click', () => copyText(REMEDIATION_COMMANDS, 'Clean-room commands copied.'));
 document.getElementById('shareBtn').addEventListener('click', async () => { const url = location.href; const text = 'Browser-only TanStack lockfile checker for the May 2026 npm incident'; try{ if(navigator.share) await navigator.share({title:document.title,text,url}); else { await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; } } catch(e){ try{ await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; }catch(_) { document.getElementById('shareMsg').textContent=url; } } });
 const tbody = document.querySelector('#affectedTable tbody'); tbody.innerHTML = Object.entries(AFFECTED).map(([name,v]) => `<tr><td><code>${esc(name)}</code></td><td>${v.bad.map(x=>`<code>${x}</code>`).join(' ')}</td><td><code>${esc(v.patched)}</code></td></tr>`).join('');
