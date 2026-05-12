@@ -9,6 +9,7 @@ Single-purpose, browser-only static tool to check pasted `package.json`, `packag
 - New prevention pack: generate local npm/pnpm/Yarn/Bun hardening snippets for release-age cooldowns, script trust, and exotic dependency blocking after a scan.
 - New GitHub Actions cache-poisoning guard: paste workflow YAML to flag risky `pull_request_target`/cache-write/writable-token/unpinned-action patterns and copy a hardening report.
 - New GitHub Actions cache-thrash guard: the same workflow scan flags high-cardinality cache keys such as `github.sha` / `github.run_id`, missing lockfile hashes, broad restore keys, and save steps that may burn the 200 new cache uploads per minute per repository budget.
+- Post-scan value CTA: after a user gets a result, the page shows a Ko-fi/support prompt and share button without analytics or tracking.
 - Indexing/social metadata: canonical, Open Graph, Twitter card, sitemap, and robots hints for the live GitHub Pages URL.
 
 No analytics, no external JavaScript, no pasted content leaves the browser.
