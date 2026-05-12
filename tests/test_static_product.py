@@ -37,12 +37,20 @@ class TanStackStaticProductTests(unittest.TestCase):
             'id="downloadReportBtn"',
             'Copy triage report',
             'Download report .txt',
-            'Copy clean-room rebuild commands',
+            'Copy detected package-manager commands',
+            'id="pmCommands"',
+            'id="pmLabel"',
+            'id="commandsText"',
         ]:
             with self.subTest(snippet=snippet):
                 self.assertIn(snippet, self.index)
         for snippet in [
-            'function buildReport(arr, bad, warn)',
+            'function buildReport(arr, bad, warn, pm)',
+            'function detectPackageManager(text)',
+            "packageManager:'pnpm@10.0.0'",
+            'PM_COMMANDS = {',
+            "Detected package manager: ${pm}",
+            "pnpm list '@tanstack/*' tanstack --depth 20",
             'function downloadReport()',
             "new Blob([lastReport + '\\n'], {type:'text/plain'})",
             "a.download = 'tanstack-lockfile-triage-report.txt'",
