@@ -56,10 +56,15 @@
       <h3>Copy-paste response pack</h3>
       <p class="muted">After each scan, copy a short report for an incident ticket, Slack update, or GitHub issue. It includes only the findings generated in your browser.</p>
       <pre id="triageText">Scan a manifest or lockfile to generate a report.</pre>
+      <div class="finding" id="pmCommands" aria-live="polite">
+        <b>Package-manager-aware rebuild commands</b>
+        <p class="muted" id="pmLabel">Scan text to detect npm, pnpm, yarn, or bun and generate safer clean-room commands.</p>
+        <pre id="commandsText">Commands will appear after a scan.</pre>
+      </div>
       <div class="actions">
         <button id="copyReportBtn" class="secondary">Copy triage report</button>
         <button id="downloadReportBtn" class="secondary">Download report .txt</button>
-        <button id="copyCommandsBtn" class="secondary">Copy clean-room rebuild commands</button>
+        <button id="copyCommandsBtn" class="secondary">Copy detected package-manager commands</button>
         <span class="copymsg muted" id="copyMsg" aria-live="polite"></span>
       </div>
     </div>
@@ -68,7 +73,7 @@
   <section class="grid">
     <div class="card mini"><h3>What it detects</h3><p>Exact malicious scoped <code>@tanstack/*</code> versions from GitHub advisory GHSA-g7cv-rxg3-hmpx and unscoped <code>tanstack@2.0.4-2.0.7</code>.</p></div>
     <div class="card mini"><h3>What to do if red</h3><ul><li>Delete lockfile + node_modules.</li><li>Upgrade to patched versions.</li><li>Rotate npm/GitHub/cloud/SSH/Vault/K8s credentials reachable by the install process.</li><li>Review CI/cloud audit logs.</li></ul></div>
-    <div class="card mini"><h3>New: response pack</h3><p>Copy a minimal triage report and clean-room rebuild commands after every scan, so teams can hand off findings without pasting the whole lockfile.</p></div>
+    <div class="card mini"><h3>New: response pack</h3><p>Copy a minimal triage report plus package-manager-aware clean-room commands after every scan, so teams can hand off findings without pasting the whole lockfile.</p></div>
     <div class="card mini"><h3>Privacy</h3><p>This page has no analytics, no network call, and no external JavaScript. Your pasted lockfile stays in local browser memory.</p></div>
   </section>
 
@@ -131,20 +136,68 @@ const AFFECTED = {
 const TYPOSQUAT = {"tanstack": {bad:["2.0.4","2.0.5","2.0.6","2.0.7"], patched:"remove; use scoped @tanstack/* packages only"}};
 const ALL = {...AFFECTED, ...TYPOSQUAT};
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const REMEDIATION_COMMANDS = `# Clean-room reinstall after a red TanStack incident hit
+const PM_COMMANDS = {
+  npm: `# npm clean-room reinstall after a red TanStack incident hit
 # Run in a fresh branch/container after saving any local work.
-rm -rf node_modules package-lock.json pnpm-lock.yaml yarn.lock bun.lockb
+rm -rf node_modules package-lock.json
 npm install
 npm audit signatures || true
 npm ls '@tanstack/*' tanstack
 
 # If CI/build hosts installed an affected version, rotate reachable secrets too:
-# npm tokens, GitHub tokens, cloud keys, SSH deploy keys, Vault/K8s creds.`;
+# npm tokens, GitHub tokens, cloud keys, SSH deploy keys, Vault/K8s creds.`,
+  pnpm: `# pnpm clean-room reinstall after a red TanStack incident hit
+# Run in a fresh branch/container after saving any local work.
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
+pnpm audit --audit-level low || true
+pnpm list '@tanstack/*' tanstack --depth 20
+
+# If CI/build hosts installed an affected version, rotate reachable secrets too:
+# npm tokens, GitHub tokens, cloud keys, SSH deploy keys, Vault/K8s creds.`,
+  yarn: `# Yarn clean-room reinstall after a red TanStack incident hit
+# Run in a fresh branch/container after saving any local work.
+rm -rf node_modules yarn.lock .yarn/cache
+corepack yarn install
+corepack yarn npm audit --all --recursive || true
+corepack yarn why '@tanstack/react-router'
+
+# If CI/build hosts installed an affected version, rotate reachable secrets too:
+# npm tokens, GitHub tokens, cloud keys, SSH deploy keys, Vault/K8s creds.`,
+  bun: `# Bun clean-room reinstall after a red TanStack incident hit
+# Run in a fresh branch/container after saving any local work.
+rm -rf node_modules bun.lock bun.lockb
+bun install
+bun pm ls | grep -E '@tanstack/|(^|[[:space:]])tanstack@' || true
+
+# If CI/build hosts installed an affected version, rotate reachable secrets too:
+# npm tokens, GitHub tokens, cloud keys, SSH deploy keys, Vault/K8s creds.`,
+  unknown: `# Package manager not detected; choose the lockfile you actually use.
+# npm:  rm -rf node_modules package-lock.json && npm install && npm ls '@tanstack/*' tanstack
+# pnpm: rm -rf node_modules pnpm-lock.yaml && pnpm install && pnpm list '@tanstack/*' tanstack --depth 20
+# yarn: rm -rf node_modules yarn.lock .yarn/cache && corepack yarn install && corepack yarn why '@tanstack/react-router'
+# bun:  rm -rf node_modules bun.lock bun.lockb && bun install && bun pm ls | grep -E '@tanstack/|(^|[[:space:]])tanstack@' || true
+
+# If CI/build hosts installed an affected version, rotate reachable secrets too.`
+};
 let lastReport = 'Scan a manifest or lockfile to generate a report.';
-function buildReport(arr, bad, warn){
+let lastCommands = PM_COMMANDS.unknown;
+function detectPackageManager(text){
+  if(/\"packageManager\"\s*:\s*\"pnpm@|packageManager:\s*pnpm@/m.test(text)) return 'pnpm';
+  if(/\"packageManager\"\s*:\s*\"yarn@|packageManager:\s*yarn@/m.test(text)) return 'yarn';
+  if(/\"packageManager\"\s*:\s*\"bun@|packageManager:\s*bun@/m.test(text)) return 'bun';
+  if(/\"packageManager\"\s*:\s*\"npm@|packageManager:\s*npm@/m.test(text)) return 'npm';
+  if(/pnpm-lock\.yaml|lockfileVersion:\s*['\"]?9|^\s*importers:/m.test(text)) return 'pnpm';
+  if(/package-lock\.json|\"lockfileVersion\"\s*:/m.test(text)) return 'npm';
+  if(/yarn\.lock|^#\s*This file is generated by running \"yarn install\"|^__metadata:/m.test(text)) return 'yarn';
+  if(/bun\.lockb?|^\s*\[lockfile\]/m.test(text)) return 'bun';
+  return 'unknown';
+}
+function buildReport(arr, bad, warn, pm){
   const lines = [];
   lines.push('TanStack lockfile triage report');
   lines.push(`Generated locally in browser: ${new Date().toISOString()}`);
+  lines.push(`Detected package manager: ${pm}`);
   lines.push(`High-risk exact hits: ${bad.length}`);
   lines.push(`Version ranges needing lockfile confirmation: ${warn.length}`);
   if(arr.length){
@@ -175,11 +228,16 @@ function downloadReport(){
   a.remove();
   document.getElementById('copyMsg').textContent = 'Report download started.';
 }
-function updateTriagePack(arr, bad, warn){
+function updateTriagePack(arr, bad, warn, pm){
   const pack = document.getElementById('triagePack');
   const text = document.getElementById('triageText');
-  lastReport = buildReport(arr, bad, warn);
+  const pmLabel = document.getElementById('pmLabel');
+  const commandsText = document.getElementById('commandsText');
+  lastCommands = PM_COMMANDS[pm] || PM_COMMANDS.unknown;
+  lastReport = buildReport(arr, bad, warn, pm);
   text.textContent = lastReport;
+  pmLabel.textContent = pm === 'unknown' ? 'Package manager not detected; pick the matching command block before rebuilding.' : `Detected ${pm}; generated ${pm}-specific clean-room commands.`;
+  commandsText.textContent = lastCommands;
   pack.className = 'triage show';
 }
 function addFinding(map, name, version, source){
@@ -223,20 +281,20 @@ function scan(){
   if(!text){ result.className='result show'; result.innerHTML='<div class="status warn"><span class="dot"></span><div><b>Paste something to scan.</b><br><span class="muted">This tool checks manifests and lockfiles only.</span></div></div>'; document.getElementById('triagePack').className='triage'; return; }
   try { const obj = JSON.parse(text); walkJson(obj, findings); } catch(e) {}
   regexScan(text, findings);
-  const arr = [...findings.values()]; const bad = arr.filter(x=>x.bad); const warn = arr.filter(x=>!x.bad && x.range);
+  const arr = [...findings.values()]; const bad = arr.filter(x=>x.bad); const warn = arr.filter(x=>!x.bad && x.range); const pm = detectPackageManager(text);
   let cls = bad.length ? 'bad' : warn.length ? 'warn' : ''; let title = bad.length ? `${bad.length} high-risk hit${bad.length>1?'s':''} found` : warn.length ? `${warn.length} version range${warn.length>1?'s':''} need lockfile confirmation` : 'No embedded affected versions found';
   let html = `<div class="status ${cls}"><span class="dot"></span><div><b>${esc(title)}</b><br><span class="muted">${bad.length ? 'Treat any host/CI runner that installed these versions as compromised.' : warn.length ? 'Ranges like ^ or ~ are not proof of the resolved version. Scan the lockfile too.' : 'This does not prove the project is safe; it only means this pasted text did not match the embedded advisory versions.'}</span></div></div>`;
   if(arr.length){ html += '<div class="findings">' + arr.map(f => `<div class="finding ${f.bad?'bad':'warn'}"><b>${esc(f.name)} ${esc(f.version)}</b><br>${f.bad ? 'Matched affected version/IOC.' : 'Potentially relevant range; verify resolved lockfile version.'} ${f.spec.patched ? `Patched/remediation: <code>${esc(f.spec.patched)}</code>.` : ''}<br><span class="muted">Source: ${esc(f.source)}</span></div>`).join('') + '</div>'; }
   html += `<p class="muted"><b>Next:</b> If red, do not reinstall from the compromised lockfile. Delete install artifacts, upgrade/pin to patched versions, and rotate secrets reachable by the install environment.</p>`;
-  updateTriagePack(arr, bad, warn);
+  updateTriagePack(arr, bad, warn, pm);
   result.className='result show'; result.innerHTML = html;
 }
 document.getElementById('scanBtn').addEventListener('click', scan);
 document.getElementById('clearBtn').addEventListener('click', () => { document.getElementById('input').value=''; document.getElementById('result').className='result'; document.getElementById('result').innerHTML=''; document.getElementById('triagePack').className='triage'; document.getElementById('copyMsg').textContent=''; });
-document.getElementById('sampleBtn').addEventListener('click', () => { document.getElementById('input').value = JSON.stringify({dependencies:{'@tanstack/react-router':'1.169.8','@tanstack/query-core':'5.90.1','tanstack':'2.0.6'}, packages:{'node_modules/@tanstack/router-core':{version:'1.169.9'}}}, null, 2); scan(); });
+document.getElementById('sampleBtn').addEventListener('click', () => { document.getElementById('input').value = JSON.stringify({packageManager:'pnpm@10.0.0', dependencies:{'@tanstack/react-router':'1.169.8','@tanstack/query-core':'5.90.1','tanstack':'2.0.6'}, packages:{'node_modules/@tanstack/router-core':{version:'1.169.9'}}}, null, 2); scan(); });
 document.getElementById('copyReportBtn').addEventListener('click', () => copyText(lastReport, 'Triage report copied.'));
 document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
-document.getElementById('copyCommandsBtn').addEventListener('click', () => copyText(REMEDIATION_COMMANDS, 'Clean-room commands copied.'));
+document.getElementById('copyCommandsBtn').addEventListener('click', () => copyText(lastCommands, 'Detected package-manager commands copied.'));
 document.getElementById('shareBtn').addEventListener('click', async () => { const url = location.href; const text = 'Browser-only TanStack lockfile checker for the May 2026 npm incident'; try{ if(navigator.share) await navigator.share({title:document.title,text,url}); else { await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; } } catch(e){ try{ await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; }catch(_) { document.getElementById('shareMsg').textContent=url; } } });
 const tbody = document.querySelector('#affectedTable tbody'); tbody.innerHTML = Object.entries(AFFECTED).map(([name,v]) => `<tr><td><code>${esc(name)}</code></td><td>${v.bad.map(x=>`<code>${x}</code>`).join(' ')}</td><td><code>${esc(v.patched)}</code></td></tr>`).join('');
 </script>
