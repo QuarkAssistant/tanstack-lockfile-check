@@ -16,7 +16,7 @@
   <style>
     :root { color-scheme: dark; --bg:#08111f; --panel:#101d31; --panel2:#16243a; --text:#e9f1ff; --muted:#9db0cc; --accent:#72f0c6; --warn:#ffcf5a; --bad:#ff7171; --ok:#69db7c; --line:#28405f; }
     *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:radial-gradient(circle at top left,#183b5f 0,#08111f 42rem),var(--bg);color:var(--text);line-height:1.5}
-    main{max-width:1120px;margin:0 auto;padding:34px 18px 50px}.hero{display:grid;gap:18px;grid-template-columns:1.4fr .7fr;align-items:stretch}.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 55px rgba(0,0,0,.28);padding:24px}h1{font-size:clamp(2rem,5vw,4.4rem);line-height:.96;margin:0 0 14px;letter-spacing:-.055em}.kicker{color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.82rem}.lede{font-size:1.12rem;color:#cfe0fa;max-width:68ch}.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.pill{border:1px solid var(--line);background:#0c192b;border-radius:999px;padding:7px 10px;color:var(--muted);font-size:.9rem}.side strong{font-size:2rem;display:block}.side p{color:var(--muted);margin:.5rem 0 0}.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button,a.button{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#062014;font-weight:850;padding:12px 16px;text-decoration:none;cursor:pointer}button.secondary,a.secondary{background:#223652;color:var(--text);border:1px solid var(--line)}button.danger{background:var(--bad);color:#2a0808}.tool{margin-top:22px;display:grid;grid-template-columns:1fr;gap:14px}textarea{width:100%;min-height:340px;resize:vertical;background:#050b14;color:var(--text);border:1px solid var(--line);border-radius:18px;padding:16px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;outline:none}textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(114,240,198,.12)}.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.muted{color:var(--muted)}.result{display:none}.result.show{display:block}.status{display:flex;gap:14px;align-items:center;border-radius:18px;padding:16px;border:1px solid var(--line);background:var(--panel)}.status .dot{width:16px;height:16px;border-radius:50%;background:var(--ok);box-shadow:0 0 24px var(--ok)}.status.bad .dot{background:var(--bad);box-shadow:0 0 24px var(--bad)}.status.warn .dot{background:var(--warn);box-shadow:0 0 24px var(--warn)}.findings{display:grid;gap:10px;margin-top:12px}.finding{border:1px solid var(--line);background:#0b1728;border-radius:16px;padding:14px}.finding b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.finding.bad{border-color:rgba(255,113,113,.55)}.finding.warn{border-color:rgba(255,207,90,.55)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:22px}.mini h3{margin:.1rem 0 .45rem}.mini p,.mini li{color:var(--muted)}code{background:#071120;border:1px solid #1d314d;border-radius:7px;padding:.12rem .33rem}.tablewrap{overflow:auto;max-height:310px;border:1px solid var(--line);border-radius:16px;margin-top:12px}table{width:100%;border-collapse:collapse;background:#071120;font-size:.86rem}th,td{padding:9px 11px;border-bottom:1px solid #1b304c;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#10213a}.footer{margin-top:28px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:18px}.copymsg{min-height:1.4em}.triage{display:none;margin-top:14px;border:1px solid var(--line);background:#071120;border-radius:18px;padding:16px}.triage.show{display:block}.triage pre{white-space:pre-wrap;word-break:break-word;background:#030812;border:1px solid #1d314d;border-radius:14px;padding:12px;color:#d6e5ff;max-height:280px;overflow:auto}.triage .actions{margin-top:10px}@media(max-width:860px){.hero,.grid{grid-template-columns:1fr}h1{letter-spacing:-.035em}}
+    main{max-width:1120px;margin:0 auto;padding:34px 18px 50px}.hero{display:grid;gap:18px;grid-template-columns:1.4fr .7fr;align-items:stretch}.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.018));border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 55px rgba(0,0,0,.28);padding:24px}h1{font-size:clamp(2rem,5vw,4.4rem);line-height:.96;margin:0 0 14px;letter-spacing:-.055em}.kicker{color:var(--accent);font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.82rem}.lede{font-size:1.12rem;color:#cfe0fa;max-width:68ch}.pillrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.pill{border:1px solid var(--line);background:#0c192b;border-radius:999px;padding:7px 10px;color:var(--muted);font-size:.9rem}.side strong{font-size:2rem;display:block}.side p{color:var(--muted);margin:.5rem 0 0}.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button,a.button{appearance:none;border:0;border-radius:12px;background:var(--accent);color:#062014;font-weight:850;padding:12px 16px;text-decoration:none;cursor:pointer}button.secondary,a.secondary{background:#223652;color:var(--text);border:1px solid var(--line)}button.danger{background:var(--bad);color:#2a0808}.tool{margin-top:22px;display:grid;grid-template-columns:1fr;gap:14px}textarea{width:100%;min-height:340px;resize:vertical;background:#050b14;color:var(--text);border:1px solid var(--line);border-radius:18px;padding:16px;font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;outline:none}select{background:#050b14;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-weight:700}textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(114,240,198,.12)}.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.muted{color:var(--muted)}.result{display:none}.result.show{display:block}.status{display:flex;gap:14px;align-items:center;border-radius:18px;padding:16px;border:1px solid var(--line);background:var(--panel)}.status .dot{width:16px;height:16px;border-radius:50%;background:var(--ok);box-shadow:0 0 24px var(--ok)}.status.bad .dot{background:var(--bad);box-shadow:0 0 24px var(--bad)}.status.warn .dot{background:var(--warn);box-shadow:0 0 24px var(--warn)}.findings{display:grid;gap:10px;margin-top:12px}.finding{border:1px solid var(--line);background:#0b1728;border-radius:16px;padding:14px}.finding b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.finding.bad{border-color:rgba(255,113,113,.55)}.finding.warn{border-color:rgba(255,207,90,.55)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:22px}.mini h3{margin:.1rem 0 .45rem}.mini p,.mini li{color:var(--muted)}code{background:#071120;border:1px solid #1d314d;border-radius:7px;padding:.12rem .33rem}.tablewrap{overflow:auto;max-height:310px;border:1px solid var(--line);border-radius:16px;margin-top:12px}table{width:100%;border-collapse:collapse;background:#071120;font-size:.86rem}th,td{padding:9px 11px;border-bottom:1px solid #1b304c;text-align:left;white-space:nowrap}th{position:sticky;top:0;background:#10213a}.footer{margin-top:28px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--line);padding-top:18px}.copymsg{min-height:1.4em}.triage{display:none;margin-top:14px;border:1px solid var(--line);background:#071120;border-radius:18px;padding:16px}.triage.show{display:block}.triage pre{white-space:pre-wrap;word-break:break-word;background:#030812;border:1px solid #1d314d;border-radius:14px;padding:12px;color:#d6e5ff;max-height:280px;overflow:auto}.triage .actions{margin-top:10px}@media(max-width:860px){.hero,.grid{grid-template-columns:1fr}h1{letter-spacing:-.035em}}
   </style>
 </head>
 <body>
@@ -68,11 +68,27 @@
         <span class="copymsg muted" id="copyMsg" aria-live="polite"></span>
       </div>
     </div>
+    <div id="preventionPack" class="triage show" aria-live="polite">
+      <h3>Supply-chain prevention pack</h3>
+      <p class="muted">Generate copy-paste package-manager policy snippets for the next incident: release-age cooldowns, script trust, and exotic dependency guardrails. These snippets stay local and are meant to be reviewed before committing.</p>
+      <div class="actions">
+        <label for="ageSelect"><b>Cooldown window</b></label>
+        <select id="ageSelect" aria-label="Minimum package release age">
+          <option value="1:1440:86400">1 day</option>
+          <option value="3:4320:259200" selected>3 days</option>
+          <option value="7:10080:604800">7 days</option>
+        </select>
+        <button id="updatePolicyBtn" class="secondary">Update prevention pack</button>
+        <button id="copyPolicyBtn" class="secondary">Copy prevention pack</button>
+      </div>
+      <pre id="policyText">Prevention policy snippets will appear here.</pre>
+    </div>
   </section>
 
   <section class="grid">
     <div class="card mini"><h3>What it detects</h3><p>Exact malicious scoped <code>@tanstack/*</code> versions from GitHub advisory GHSA-g7cv-rxg3-hmpx and unscoped <code>tanstack@2.0.4-2.0.7</code>.</p></div>
     <div class="card mini"><h3>What to do if red</h3><ul><li>Delete lockfile + node_modules.</li><li>Upgrade to patched versions.</li><li>Rotate npm/GitHub/cloud/SSH/Vault/K8s credentials reachable by the install process.</li><li>Review CI/cloud audit logs.</li></ul></div>
+    <div class="card mini"><h3>New: prevention pack</h3><p>After scanning, generate package-manager-specific hardening snippets: release-age gates, script trust controls, and pnpm exotic dependency blocking.</p></div>
     <div class="card mini"><h3>New: response pack</h3><p>Copy a minimal triage report plus package-manager-aware clean-room commands after every scan, so teams can hand off findings without pasting the whole lockfile.</p></div>
     <div class="card mini"><h3>Privacy</h3><p>This page has no analytics, no network call, and no external JavaScript. Your pasted lockfile stays in local browser memory.</p></div>
   </section>
@@ -180,6 +196,69 @@ bun pm ls | grep -E '@tanstack/|(^|[[:space:]])tanstack@' || true
 
 # If CI/build hosts installed an affected version, rotate reachable secrets too.`
 };
+const POLICY_TEMPLATES = {
+  npm: ({days}) => `# npm release-age cooldown (npm versions with min-release-age support)
+# .npmrc
+min-release-age=${days}
+
+# Extra checks for older npm clients or one-off installs:
+# npm install --before="$(date -v -${days}d +%Y-%m-%d)"  # macOS date syntax
+# npm ci --ignore-scripts  # only if your app can install without lifecycle scripts
+# Review new dependencies before relaxing the cooldown.`,
+  pnpm: ({minutes}) => `# pnpm supply-chain guardrails
+# pnpm-workspace.yaml
+minimumReleaseAge: ${minutes}
+minimumReleaseAgeExclude:
+  - '@types/node'
+  - typescript
+blockExoticSubdeps: true
+
+# pnpm v10+ blocks most dependency lifecycle scripts by default.
+# Add only audited build dependencies to onlyBuiltDependencies / allowBuilds.`,
+  yarn: ({days}) => `# Yarn Berry npm release-age gate
+# .yarnrc.yml
+npmMinimalAgeGate: "${days}d"
+npmPreapprovedPackages:
+  - "@types/node"
+  - "typescript"
+
+# Pair with immutable installs in CI:
+# corepack yarn install --immutable`,
+  bun: ({seconds, days}) => `# Bun package-install guardrails
+# bunfig.toml
+[install]
+minimumReleaseAge = ${seconds} # ${days} day(s), seconds
+minimumReleaseAgeExcludes = ["@types/bun", "typescript"]
+
+# Bun does not run arbitrary dependency lifecycle scripts by default.
+# Keep trustedDependencies short and audited in package.json:
+# { "trustedDependencies": ["only-packages-that-need-postinstall"] }`,
+  unknown: policy => [
+    POLICY_TEMPLATES.npm(policy),
+    '',
+    POLICY_TEMPLATES.pnpm(policy),
+    '',
+    POLICY_TEMPLATES.yarn(policy),
+    '',
+    POLICY_TEMPLATES.bun(policy)
+  ].join('\n---\n')
+};
+let lastPolicy = '';
+function selectedAgePolicy(){
+  const raw = (document.getElementById('ageSelect') || {}).value || '3:4320:259200';
+  const [days, minutes, seconds] = raw.split(':').map(Number);
+  return {days, minutes, seconds};
+}
+function buildPolicyPack(pm){
+  const policy = selectedAgePolicy();
+  const key = POLICY_TEMPLATES[pm] ? pm : 'unknown';
+  const header = `Detected package manager: ${pm || 'unknown'}\nCooldown target: ${policy.days} day(s)\nReview before commit; urgent security patches may need explicit excludes.\n`;
+  return header + '\n' + POLICY_TEMPLATES[key](policy);
+}
+function updatePreventionPack(pm='unknown'){
+  lastPolicy = buildPolicyPack(pm);
+  document.getElementById('policyText').textContent = lastPolicy;
+}
 let lastReport = 'Scan a manifest or lockfile to generate a report.';
 let lastCommands = PM_COMMANDS.unknown;
 function detectPackageManager(text){
@@ -287,6 +366,7 @@ function scan(){
   if(arr.length){ html += '<div class="findings">' + arr.map(f => `<div class="finding ${f.bad?'bad':'warn'}"><b>${esc(f.name)} ${esc(f.version)}</b><br>${f.bad ? 'Matched affected version/IOC.' : 'Potentially relevant range; verify resolved lockfile version.'} ${f.spec.patched ? `Patched/remediation: <code>${esc(f.spec.patched)}</code>.` : ''}<br><span class="muted">Source: ${esc(f.source)}</span></div>`).join('') + '</div>'; }
   html += `<p class="muted"><b>Next:</b> If red, do not reinstall from the compromised lockfile. Delete install artifacts, upgrade/pin to patched versions, and rotate secrets reachable by the install environment.</p>`;
   updateTriagePack(arr, bad, warn, pm);
+  updatePreventionPack(pm);
   result.className='result show'; result.innerHTML = html;
 }
 document.getElementById('scanBtn').addEventListener('click', scan);
@@ -295,7 +375,11 @@ document.getElementById('sampleBtn').addEventListener('click', () => { document.
 document.getElementById('copyReportBtn').addEventListener('click', () => copyText(lastReport, 'Triage report copied.'));
 document.getElementById('downloadReportBtn').addEventListener('click', downloadReport);
 document.getElementById('copyCommandsBtn').addEventListener('click', () => copyText(lastCommands, 'Detected package-manager commands copied.'));
+document.getElementById('updatePolicyBtn').addEventListener('click', () => updatePreventionPack(detectPackageManager(document.getElementById('input').value)));
+document.getElementById('ageSelect').addEventListener('change', () => updatePreventionPack(detectPackageManager(document.getElementById('input').value)));
+document.getElementById('copyPolicyBtn').addEventListener('click', () => copyText(lastPolicy || buildPolicyPack('unknown'), 'Prevention pack copied.'));
 document.getElementById('shareBtn').addEventListener('click', async () => { const url = location.href; const text = 'Browser-only TanStack lockfile checker for the May 2026 npm incident'; try{ if(navigator.share) await navigator.share({title:document.title,text,url}); else { await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; } } catch(e){ try{ await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; }catch(_) { document.getElementById('shareMsg').textContent=url; } } });
+updatePreventionPack('unknown');
 const tbody = document.querySelector('#affectedTable tbody'); tbody.innerHTML = Object.entries(AFFECTED).map(([name,v]) => `<tr><td><code>${esc(name)}</code></td><td>${v.bad.map(x=>`<code>${x}</code>`).join(' ')}</td><td><code>${esc(v.patched)}</code></td></tr>`).join('');
 </script>
 </body>

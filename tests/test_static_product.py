@@ -59,6 +59,26 @@ class TanStackStaticProductTests(unittest.TestCase):
             with self.subTest(snippet=snippet):
                 self.assertIn(snippet, self.index)
 
+    def test_prevention_policy_pack_generates_manager_specific_snippets(self):
+        for snippet in [
+            'id="preventionPack"',
+            'Supply-chain prevention pack',
+            'id="ageSelect"',
+            'id="copyPolicyBtn"',
+            'function buildPolicyPack(pm)',
+            'function selectedAgePolicy()',
+            'const POLICY_TEMPLATES = {',
+            'minimumReleaseAge: ${minutes}',
+            'npmMinimalAgeGate: "${days}d"',
+            'minimumReleaseAge = ${seconds}',
+            'min-release-age=${days}',
+            'trustedDependencies',
+            'blockExoticSubdeps: true',
+            'Update prevention pack',
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+
     def test_detection_data_and_privacy_claim_are_embedded(self):
         self.assertIn('"@tanstack/react-router": {bad:["1.169.5","1.169.8"], patched:"1.169.9"}', self.index)
         self.assertIn('"tanstack": {bad:["2.0.4","2.0.5","2.0.6","2.0.7"]', self.index)
