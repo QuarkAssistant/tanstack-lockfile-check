@@ -108,6 +108,24 @@ class TanStackStaticProductTests(unittest.TestCase):
                 self.assertIn(snippet, self.index)
         self.assertIn('GitHub Actions cache-poisoning guard', self.readme)
 
+    def test_actions_cache_thrash_guard_flags_high_churn_keys(self):
+        for snippet in [
+            'GitHub Actions cache-thrash guard',
+            'Cache-thrash and rate-limit findings',
+            'cache keys that create a new archive on every commit or run',
+            '200 new cache uploads per minute per repository',
+            'High-cardinality cache key',
+            'Cache key has no lockfile hash',
+            'function analyzeCacheThrash(text)',
+            'function buildCacheThrashSection(text)',
+            'github.sha',
+            'github.run_id',
+            "hashFiles('**/pnpm-lock.yaml', '**/package-lock.json', '**/yarn.lock', '**/bun.lock')",
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+        self.assertIn('GitHub Actions cache-thrash guard', self.readme)
+
     def test_detection_data_and_privacy_claim_are_embedded(self):
         self.assertIn('"@tanstack/react-router": {bad:["1.169.5","1.169.8"], patched:"1.169.9"}', self.index)
         self.assertIn('"tanstack": {bad:["2.0.4","2.0.5","2.0.6","2.0.7"]', self.index)

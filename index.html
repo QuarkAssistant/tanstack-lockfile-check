@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TanStack Lockfile Check — browser-only npm incident scanner</title>
-  <meta name="description" content="Paste package.json or npm/pnpm/yarn lockfiles to quickly spot the May 2026 TanStack compromised package versions. Runs entirely in your browser." />
+  <meta name="description" content="Paste package.json, lockfiles, or GitHub Actions YAML to spot the May 2026 TanStack npm incident and cache-poisoning/cache-thrash workflow risks. Runs entirely in your browser." />
   <link rel="canonical" href="https://quarkassistant.github.io/tanstack-lockfile-check/" />
   <meta property="og:title" content="TanStack Lockfile Check" />
   <meta property="og:description" content="Browser-only checker for affected TanStack npm incident versions, with local incident triage report export." />
@@ -85,14 +85,14 @@
     </div>
     <div id="workflowGuard" class="triage show" aria-live="polite">
       <h3>GitHub Actions cache-poisoning guard</h3>
-      <p class="muted">Paste a workflow YAML snippet to locally flag risky combinations called out in the TanStack postmortem discussion: <code>pull_request_target</code>, writable tokens, cache writes, unpinned actions, and shelling out untrusted event fields.</p>
+      <p class="muted">Paste a workflow YAML snippet to locally flag risky combinations called out in the TanStack postmortem discussion: <code>pull_request_target</code>, writable tokens, cache writes, unpinned actions, shelling out untrusted event fields, and cache keys that create a new archive on every commit or run.</p>
       <textarea id="workflowInput" spellcheck="false" placeholder="Paste .github/workflows/release.yml or CI YAML here..."></textarea>
       <div class="actions">
         <button id="scanWorkflowBtn" class="secondary">Scan workflow YAML</button>
         <button id="workflowSampleBtn" class="secondary">Load risky workflow sample</button>
         <button id="copyWorkflowReportBtn" class="secondary">Copy workflow guard report</button>
       </div>
-      <pre id="workflowReport">Workflow guard report will appear here.</pre>
+      <pre id="workflowReport">Workflow guard report will appear here. It also includes the GitHub Actions cache-thrash guard for cache-key churn and rate-limit risk.</pre>
     </div>
   </section>
 
@@ -101,7 +101,7 @@
     <div class="card mini"><h3>What to do if red</h3><ul><li>Delete lockfile + node_modules.</li><li>Upgrade to patched versions.</li><li>Rotate npm/GitHub/cloud/SSH/Vault/K8s credentials reachable by the install process.</li><li>Review CI/cloud audit logs.</li></ul></div>
     <div class="card mini"><h3>New: prevention pack</h3><p>After scanning, generate package-manager-specific hardening snippets: release-age gates, script trust controls, and pnpm exotic dependency blocking.</p></div>
     <div class="card mini"><h3>New: response pack</h3><p>Copy a minimal triage report plus package-manager-aware clean-room commands after every scan, so teams can hand off findings without pasting the whole lockfile.</p></div>
-    <div class="card mini"><h3>New: Actions cache guard</h3><p>Paste workflow YAML to spot risky cache writes on untrusted triggers, writable tokens, unpinned actions, and shell interpolation of event fields.</p></div>
+    <div class="card mini"><h3>New: Actions cache guard</h3><p>Paste workflow YAML to spot cache poisoning risks plus cache-thrash keys that may burn GitHub's 200 new cache uploads per minute per repository limit.</p></div>
     <div class="card mini"><h3>Privacy</h3><p>This page has no analytics, no network call, and no external JavaScript. Your pasted lockfile and workflow YAML stay in local browser memory.</p></div>
   </section>
 
@@ -389,8 +389,44 @@ function analyzeWorkflowYaml(text){
   return findings;
 }
 function unq(arr){ return [...new Set(arr)]; }
+function analyzeCacheThrash(text){
+  const findings = [];
+  const add = (level, label, detail) => findings.push({level, label, detail});
+  const hasCache = /actions\/(cache|cache\/save|cache\/restore)|save-cache|restore-keys:|\bkey:\s*\$\{\{/i.test(text);
+  if(!hasCache) return [{level:'OK', label:'No Actions cache usage detected', detail:'No actions/cache key pattern appeared in this pasted workflow.'}];
+  const keyLines = [...text.matchAll(/(^|\n)\s*key:\s*([^\n#]+)/g)].map(m => m[2].trim());
+  const highCardinality = keyLines.filter(k => /github\.(sha|run_id|run_number|run_attempt|ref|head_ref)|github\.event\.pull_request\.head\.sha|date\(|timestamp|steps\.[^.]+\.outputs\.(date|time|sha)/i.test(k));
+  const hashFilesKeys = keyLines.filter(k => /hashFiles\s*\(/i.test(k));
+  const broadRestore = [...text.matchAll(/(^|\n)\s*restore-keys:\s*[|>]?([\s\S]{0,180})/g)]
+    .filter(m => /(^|\n)\s{6,}-\s*(Linux|macOS|Windows|ubuntu|node|npm|pnpm|yarn|bun)[-_]?\s*$/i.test(m[2]));
+  if(highCardinality.length) add('CHECK', 'High-cardinality cache key', `These cache keys may create a fresh archive every run/commit and trigger cache-thrash: ${unq(highCardinality).slice(0, 4).join('; ')}.`);
+  if(keyLines.length && !hashFilesKeys.length) add('CHECK', 'Cache key has no lockfile hash', "Prefer keys based on lockfiles or tool config, e.g. hashFiles('**/pnpm-lock.yaml', '**/package-lock.json', '**/yarn.lock', '**/bun.lock'), not github.sha or github.run_id.");
+  if(broadRestore.length) add('CHECK', 'Very broad restore-keys prefix', 'Broad prefixes can restore stale or cross-branch dependency caches; scope restore keys by OS, package manager, and lockfile family.');
+  if(/actions\/cache\/save@|save-cache/i.test(text) && !/if:\s*[^\n]*(github\.ref\s*==\s*['"]refs\/heads\/(main|master)|github\.event_name\s*==\s*['"]push)/i.test(text)) add('CHECK', 'Cache save is not clearly gated', 'Save caches only on trusted push/main flows when possible; let PR jobs restore but avoid saving shared archives from every untrusted or experimental run.');
+  if(!findings.length) add('OK', 'Cache key shape looks stable', 'The pasted cache keys appear to use stable dependency inputs rather than per-run identifiers. Still monitor cache hit rate and upload volume.');
+  return findings;
+}
+function buildCacheThrashSection(text){
+  const findings = analyzeCacheThrash(text);
+  const check = findings.filter(f => f.level === 'CHECK').length;
+  return [
+    '',
+    'GitHub Actions cache-thrash guard',
+    'Cache-thrash and rate-limit findings',
+    `Review-needed cache findings: ${check}`,
+    'GitHub Actions currently rate-limits cache creation at 200 new cache uploads per minute per repository; keys based on github.sha, github.run_id, or timestamps can waste that budget and lower hit rates.',
+    ...findings.map(f => `- ${f.level} ${f.label}: ${f.detail}`),
+    '',
+    'Cache-key baseline:',
+    "key: ${{ runner.os }}-deps-${{ hashFiles('**/pnpm-lock.yaml', '**/package-lock.json', '**/yarn.lock', '**/bun.lock') }}",
+    'restore-keys: |',
+    '  ${{ runner.os }}-deps-',
+    '# Avoid github.sha, github.run_id, github.run_number, timestamps, and untrusted event values in shared cache keys.'
+  ];
+}
 function buildWorkflowGuardReport(text){
   const findings = analyzeWorkflowYaml(text);
+  const cacheThrash = buildCacheThrashSection(text);
   const red = findings.filter(f => f.level === 'RED').length;
   const check = findings.filter(f => f.level === 'CHECK').length;
   const lines = [
@@ -401,6 +437,7 @@ function buildWorkflowGuardReport(text){
     '',
     'Findings:',
     ...findings.map(f => `- ${f.level} ${f.label}: ${f.detail}`),
+    ...cacheThrash,
     '',
     'Copy-paste hardening baseline:',
     'permissions:',
@@ -423,7 +460,7 @@ function scanWorkflow(){
   report.textContent = lastWorkflowReport;
 }
 function loadWorkflowSample(){
-  document.getElementById('workflowInput').value = `name: bundle-size\non:\n  pull_request_target:\n    types: [opened, synchronize]\npermissions:\n  contents: write\n  id-token: write\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/cache/save@v4\n        with:\n          path: ~/.pnpm-store\n          key: Linux-pnpm-store-${'${{'} github.event.pull_request.head.sha ${'}}'}\n      - run: echo "${'${{'} github.event.pull_request.title ${'}}'}" | bash`;
+  document.getElementById('workflowInput').value = `name: bundle-size\non:\n  pull_request_target:\n    types: [opened, synchronize]\npermissions:\n  contents: write\n  id-token: write\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/cache/save@v4\n        with:\n          path: ~/.pnpm-store\n          key: Linux-pnpm-store-${'${{'} github.event.pull_request.head.sha ${'}}'}\n      - uses: actions/cache@v4\n        with:\n          path: .next/cache\n          key: next-${'${{'} github.sha ${'}}'}-${'${{'} github.run_id ${'}}'}\n      - run: echo "${'${{'} github.event.pull_request.title ${'}}'}" | bash`;
   scanWorkflow();
 }
 function scan(){
