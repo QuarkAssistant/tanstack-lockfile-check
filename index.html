@@ -83,6 +83,17 @@
       </div>
       <pre id="policyText">Prevention policy snippets will appear here.</pre>
     </div>
+    <div id="workflowGuard" class="triage show" aria-live="polite">
+      <h3>GitHub Actions cache-poisoning guard</h3>
+      <p class="muted">Paste a workflow YAML snippet to locally flag risky combinations called out in the TanStack postmortem discussion: <code>pull_request_target</code>, writable tokens, cache writes, unpinned actions, and shelling out untrusted event fields.</p>
+      <textarea id="workflowInput" spellcheck="false" placeholder="Paste .github/workflows/release.yml or CI YAML here..."></textarea>
+      <div class="actions">
+        <button id="scanWorkflowBtn" class="secondary">Scan workflow YAML</button>
+        <button id="workflowSampleBtn" class="secondary">Load risky workflow sample</button>
+        <button id="copyWorkflowReportBtn" class="secondary">Copy workflow guard report</button>
+      </div>
+      <pre id="workflowReport">Workflow guard report will appear here.</pre>
+    </div>
   </section>
 
   <section class="grid">
@@ -90,7 +101,8 @@
     <div class="card mini"><h3>What to do if red</h3><ul><li>Delete lockfile + node_modules.</li><li>Upgrade to patched versions.</li><li>Rotate npm/GitHub/cloud/SSH/Vault/K8s credentials reachable by the install process.</li><li>Review CI/cloud audit logs.</li></ul></div>
     <div class="card mini"><h3>New: prevention pack</h3><p>After scanning, generate package-manager-specific hardening snippets: release-age gates, script trust controls, and pnpm exotic dependency blocking.</p></div>
     <div class="card mini"><h3>New: response pack</h3><p>Copy a minimal triage report plus package-manager-aware clean-room commands after every scan, so teams can hand off findings without pasting the whole lockfile.</p></div>
-    <div class="card mini"><h3>Privacy</h3><p>This page has no analytics, no network call, and no external JavaScript. Your pasted lockfile stays in local browser memory.</p></div>
+    <div class="card mini"><h3>New: Actions cache guard</h3><p>Paste workflow YAML to spot risky cache writes on untrusted triggers, writable tokens, unpinned actions, and shell interpolation of event fields.</p></div>
+    <div class="card mini"><h3>Privacy</h3><p>This page has no analytics, no network call, and no external JavaScript. Your pasted lockfile and workflow YAML stay in local browser memory.</p></div>
   </section>
 
   <section class="card" style="margin-top:22px">
@@ -355,6 +367,65 @@ function regexScan(text, findings){
     findings.set('IOC|optionalDependency', {ioc:true, bad:true, source:'IOC scan', name:'malicious optional dependency indicator', version:'@tanstack/setup / router_init.js / orphan git ref', spec:{patched:'delete install artifacts and rotate secrets'}});
   }
 }
+let lastWorkflowReport = 'Workflow guard report will appear here.';
+function analyzeWorkflowYaml(text){
+  const findings = [];
+  const add = (level, label, detail) => findings.push({level, label, detail});
+  const hasUntrustedTrigger = /(^|\n)\s*(pull_request_target|issue_comment|workflow_run)\s*:/m.test(text);
+  const writesCache = /actions\/(cache|cache\/save)|save-cache|restore-keys:|\bkey:\s*\$\{\{/i.test(text);
+  const permissionsBlock = /(^|\n)\s*permissions\s*:/m.test(text);
+  const writableToken = /permissions:\s*write-all|contents:\s*write|actions:\s*write|checks:\s*write|id-token:\s*write|packages:\s*write|pull-requests:\s*write/i.test(text);
+  const eventShell = /run:\s*[|>]|\bgithub\.event\.(pull_request|issue|comment|head_ref|title|body|label|sender)/i.test(text) && /github\.event\./i.test(text);
+  const unpinned = [...text.matchAll(/uses:\s*([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)?)@([^\s#]+)(?:\s|$)/g)]
+    .filter(m => !/^[a-f0-9]{40}$/i.test(m[2]))
+    .map(m => `${m[1]}@${m[2]}`);
+  if(hasUntrustedTrigger && writesCache) add('RED', 'Cache write reachable from untrusted trigger', 'Do not let pull_request_target, issue_comment, or workflow_run jobs save caches that trusted release/main jobs can later restore. Split cache namespaces or disable saves for untrusted events.');
+  if(writableToken && hasUntrustedTrigger) add('RED', 'Writable token on untrusted trigger', 'Set top-level permissions: contents: read, then grant writes only in isolated trusted jobs after maintainer approval.');
+  if(!permissionsBlock) add('CHECK', 'No explicit permissions block', 'Add permissions: contents: read at workflow or job level so default token scope is not guessed.');
+  if(/id-token:\s*write/i.test(text) && hasUntrustedTrigger) add('RED', 'Trusted-publishing token on untrusted path', 'Keep id-token: write only in release jobs triggered by protected tags/branches, never PR/comment controlled paths.');
+  if(eventShell) add('CHECK', 'Event fields may reach shell', 'Treat github.event.* values as attacker-controlled; pass through env with quoting or avoid echoing them into run scripts.');
+  if(unpinned.length) add('CHECK', 'Actions are not pinned to immutable SHAs', `Pin action references before release/publish paths: ${unq(unpinned).slice(0, 5).join(', ')}.`);
+  if(!findings.length) add('OK', 'No obvious cache-poisoning pattern found', 'This local heuristic did not match the built-in risk patterns. Still run a full workflow security review before publishing.');
+  return findings;
+}
+function unq(arr){ return [...new Set(arr)]; }
+function buildWorkflowGuardReport(text){
+  const findings = analyzeWorkflowYaml(text);
+  const red = findings.filter(f => f.level === 'RED').length;
+  const check = findings.filter(f => f.level === 'CHECK').length;
+  const lines = [
+    'GitHub Actions cache-poisoning guard report',
+    `Generated locally in browser: ${new Date().toISOString()}`,
+    `High-risk workflow findings: ${red}`,
+    `Review-needed workflow findings: ${check}`,
+    '',
+    'Findings:',
+    ...findings.map(f => `- ${f.level} ${f.label}: ${f.detail}`),
+    '',
+    'Copy-paste hardening baseline:',
+    'permissions:',
+    '  contents: read',
+    '',
+    '# For PRs/comments: never save caches into namespaces restored by trusted release jobs.',
+    '# For publish/release: pin actions to full commit SHAs and grant id-token: write only in the protected release job.',
+    '# Treat github.event.* strings as attacker-controlled input.',
+    '',
+    'Privacy note: generated by a browser-only page; pasted workflow YAML was not uploaded.',
+    'Disclosure: Built by Quark Assistant — autonomous AI agent. Code authored by AI under owner supervision.'
+  ];
+  return lines.join('\n');
+}
+function scanWorkflow(){
+  const text = document.getElementById('workflowInput').value.trim();
+  const report = document.getElementById('workflowReport');
+  if(!text){ lastWorkflowReport = 'Paste workflow YAML to generate a cache-poisoning guard report.'; report.textContent = lastWorkflowReport; return; }
+  lastWorkflowReport = buildWorkflowGuardReport(text);
+  report.textContent = lastWorkflowReport;
+}
+function loadWorkflowSample(){
+  document.getElementById('workflowInput').value = `name: bundle-size\non:\n  pull_request_target:\n    types: [opened, synchronize]\npermissions:\n  contents: write\n  id-token: write\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/cache/save@v4\n        with:\n          path: ~/.pnpm-store\n          key: Linux-pnpm-store-${'${{'} github.event.pull_request.head.sha ${'}}'}\n      - run: echo "${'${{'} github.event.pull_request.title ${'}}'}" | bash`;
+  scanWorkflow();
+}
 function scan(){
   const text = document.getElementById('input').value.trim(); const result = document.getElementById('result'); const findings = new Map();
   if(!text){ result.className='result show'; result.innerHTML='<div class="status warn"><span class="dot"></span><div><b>Paste something to scan.</b><br><span class="muted">This tool checks manifests and lockfiles only.</span></div></div>'; document.getElementById('triagePack').className='triage'; return; }
@@ -378,6 +449,9 @@ document.getElementById('copyCommandsBtn').addEventListener('click', () => copyT
 document.getElementById('updatePolicyBtn').addEventListener('click', () => updatePreventionPack(detectPackageManager(document.getElementById('input').value)));
 document.getElementById('ageSelect').addEventListener('change', () => updatePreventionPack(detectPackageManager(document.getElementById('input').value)));
 document.getElementById('copyPolicyBtn').addEventListener('click', () => copyText(lastPolicy || buildPolicyPack('unknown'), 'Prevention pack copied.'));
+document.getElementById('scanWorkflowBtn').addEventListener('click', scanWorkflow);
+document.getElementById('workflowSampleBtn').addEventListener('click', loadWorkflowSample);
+document.getElementById('copyWorkflowReportBtn').addEventListener('click', () => copyText(lastWorkflowReport, 'Workflow guard report copied.'));
 document.getElementById('shareBtn').addEventListener('click', async () => { const url = location.href; const text = 'Browser-only TanStack lockfile checker for the May 2026 npm incident'; try{ if(navigator.share) await navigator.share({title:document.title,text,url}); else { await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; } } catch(e){ try{ await navigator.clipboard.writeText(url); document.getElementById('shareMsg').textContent='Link copied.'; }catch(_) { document.getElementById('shareMsg').textContent=url; } } });
 updatePreventionPack('unknown');
 const tbody = document.querySelector('#affectedTable tbody'); tbody.innerHTML = Object.entries(AFFECTED).map(([name,v]) => `<tr><td><code>${esc(name)}</code></td><td>${v.bad.map(x=>`<code>${x}</code>`).join(' ')}</td><td><code>${esc(v.patched)}</code></td></tr>`).join('');

@@ -79,6 +79,35 @@ class TanStackStaticProductTests(unittest.TestCase):
             with self.subTest(snippet=snippet):
                 self.assertIn(snippet, self.index)
 
+    def test_github_actions_cache_poisoning_guard_is_local_and_copyable(self):
+        for snippet in [
+            'id="workflowGuard"',
+            'GitHub Actions cache-poisoning guard',
+            'id="workflowInput"',
+            'Scan workflow YAML',
+            'Load risky workflow sample',
+            'Copy workflow guard report',
+            'id="workflowReport"',
+            'pasted lockfile and workflow YAML stay in local browser memory',
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+        for snippet in [
+            'function analyzeWorkflowYaml(text)',
+            'function buildWorkflowGuardReport(text)',
+            'function scanWorkflow()',
+            'function loadWorkflowSample()',
+            'pull_request_target',
+            'actions/cache/save',
+            'Writable token on untrusted trigger',
+            'Trusted-publishing token on untrusted path',
+            'github.event.* strings as attacker-controlled input',
+            "document.getElementById('copyWorkflowReportBtn').addEventListener('click'",
+        ]:
+            with self.subTest(snippet=snippet):
+                self.assertIn(snippet, self.index)
+        self.assertIn('GitHub Actions cache-poisoning guard', self.readme)
+
     def test_detection_data_and_privacy_claim_are_embedded(self):
         self.assertIn('"@tanstack/react-router": {bad:["1.169.5","1.169.8"], patched:"1.169.9"}', self.index)
         self.assertIn('"tanstack": {bad:["2.0.4","2.0.5","2.0.6","2.0.7"]', self.index)

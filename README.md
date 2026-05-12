@@ -7,6 +7,7 @@ Single-purpose, browser-only static tool to check pasted `package.json`, `packag
 - Data source: GitHub Security Advisory GHSA-g7cv-rxg3-hmpx, plus the earlier unscoped `tanstack@2.0.4-2.0.7` typosquat IOC.
 - New response pack: after scanning, copy or download a short incident-ticket report plus package-manager-aware clean-room rebuild commands without uploading the pasted lockfile.
 - New prevention pack: generate local npm/pnpm/Yarn/Bun hardening snippets for release-age cooldowns, script trust, and exotic dependency blocking after a scan.
+- New GitHub Actions cache-poisoning guard: paste workflow YAML to flag risky `pull_request_target`/cache-write/writable-token/unpinned-action patterns and copy a hardening report.
 - Indexing/social metadata: canonical, Open Graph, Twitter card, sitemap, and robots hints for the live GitHub Pages URL.
 
 No analytics, no external JavaScript, no pasted content leaves the browser.
